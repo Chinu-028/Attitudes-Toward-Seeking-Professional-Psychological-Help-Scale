@@ -9,7 +9,10 @@ body{font-family:Arial;background:#eef2f5;padding:40px;}
 .container{background:white;padding:25px;max-width:800px;margin:auto;border-radius:10px;}
 .question{margin-top:18px;}
 .scale label{margin-right:10px;}
-button{margin-top:30px;padding:12px 20px;background:#2e7d32;color:white;border:none;border-radius:6px;}
+button{margin-top:30px;padding:12px 20px;background:#2e7d32;color:white;border:none;border-radius:6px;cursor:pointer;}
+button:hover{background:#1e5622;}
+.error{color:red;margin-top:10px;}
+.success{color:green;margin-top:10px;}
 </style>
 </head>
 <body>
@@ -17,7 +20,7 @@ button{margin-top:30px;padding:12px 20px;background:#2e7d32;color:white;border:n
 <h2>Attitudes Toward Seeking Mental Health Services</h2>
 <h3>Participant Details</h3>
 <label>Sex:</label>
-<select id="sex">
+<select id="sex" required>
   <option value="">Select</option>
   <option>Male</option>
   <option>Female</option>
@@ -25,10 +28,10 @@ button{margin-top:30px;padding:12px 20px;background:#2e7d32;color:white;border:n
 </select>
 <br><br>
 <label>Age:</label>
-<input type="number" id="age">
+<input type="number" id="age" required min="18" max="120">
 <br><br>
 <label>Area:</label>
-<select id="area">
+<select id="area" required>
   <option value="">Select</option>
   <option>Urban</option>
   <option>Semi Urban</option>
@@ -41,6 +44,7 @@ button{margin-top:30px;padding:12px 20px;background:#2e7d32;color:white;border:n
 <div id="questions"></div>
 <button onclick="submitForm()">Submit & Download PDF</button>
 <p id="msg"></p>
+<div id="status"></div>
 </div>
  
 <script>
@@ -48,7 +52,7 @@ const items = [
 "There are certain problems which should not be discussed outside of one's immediate family.",
 "I would have a very good idea of what to do and who to talk to if I decided to seek professional help for psychological problems.",
 "I would not want my significant other (spouse, partner, etc.) to know if I were suffering from psychological problems.",
-"Keeping one‟s mind on a job is a good solution for avoiding personal worries and concerns.",
+"Keeping one's mind on a job is a good solution for avoiding personal worries and concerns.",
 "If good friends asked my advice about a psychological problem, I might recommend that they see a professional.",
 "Having been mentally ill carries with it a burden of shame.",
 "It is probably best not to know everything about oneself.",
@@ -61,51 +65,136 @@ const items = [
 "There are experiences in my life I would not discuss with anyone",
 "I would want to get professional help if I were worried or upset for a long period of time.",
 "I would be uncomfortable seeking professional help for psychological problems because people in my social or business circles might find out about it.",
-"Having been diagnosed with a mental disorder is a blot on a person‟s life.",
+"Having been diagnosed with a mental disorder is a blot on a person's life.",
 "There is something admirable in the attitude of people who are willing to cope with their conflicts and fears without resorting to professional help.",
 "If I believed I were having a mental breakdown, my first inclination would be to get professional attention.",
 "I would feel uneasy going to a professional because of what some people would think.",
 "People with strong characters can get over psychological problems by themselves and would have little need for professional help.",
 "I would willingly confide intimate matters to an appropriate person if I thought it might help me or a member of my family.",
-"Had I received treatment for psychological problems, I would not feel that it ought to be “covered up.",
+"Had I received treatment for psychological problems, I would not feel that it ought to be covered up.",
 "I would be embarrassed if my neighbor saw me going into the office of a professional who deals with psychological problems."
 ];
-let html="";
-items.forEach((q,i)=>{
-html+=`<div class="question"><p>${i+1}. ${q}</p><div class="scale">`;
-for(let j=0;j<=4;j++){
-html+=`<label><input type="radio" name="q${i}" value="${j}" required>${j}</label>`;
-}
-html+=`</div></div>`;
-});
-document.getElementById("questions").innerHTML=html;
 
-async function submitForm(){
-let responses = {};
-// collect answers
-for(let i=0;i<24;i++){
-let val=document.querySelector('input[name="q'+i+'"]:checked');
-responses["Q"+(i+1)] = val ? val.value : "";
-}
-// send to google sheet
-await fetch("https://script.google.com/macros/s/AKfycbwM0YQSglMyPu1Sg0LGllXhYr4FLGrvR3MnHQiw00IITNblyySg-QvgnzNK_4GbeP7Z/exec", {
-method:"POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify(responses)
+// Generate questions
+let html = "";
+items.forEach((q, i) => {
+    html += `<div class="question"><p>${i+1}. ${q}</p><div class="scale">`;
+    for(let j = 0; j <= 4; j++) {
+        html += `<label><input type="radio" name="q${i}" value="${j}" required> ${j}</label>`;
+    }
+    html += `</div></div>`;
 });
-// create pdf
-const { jsPDF } = window.jspdf;
-const doc = new jsPDF();
-let y=10;
-doc.text("Mental Health Survey Response",10,y);
-y+=10;
-for(let key in responses){
-doc.text(key + " : " + responses[key],10,y);
-y+=8;
-if(y>280){ doc.addPage(); y=10;}
+document.getElementById("questions").innerHTML = html;
+
+async function submitForm() {
+    const statusDiv = document.getElementById("status");
+    statusDiv.innerHTML = "Processing...";
+    
+    // Validate participant details
+    const sex = document.getElementById("sex").value;
+    const age = document.getElementById("age").value;
+    const area = document.getElementById("area").value;
+    
+    if (!sex || !age || !area) {
+        statusDiv.innerHTML = '<span class="error">Please fill in all participant details</span>';
+        return;
+    }
+    
+    // Validate all questions are answered
+    let allAnswered = true;
+    for(let i = 0; i < 24; i++) {
+        let val = document.querySelector('input[name="q' + i + '"]:checked');
+        if (!val) {
+            allAnswered = false;
+            break;
+        }
+    }
+    
+    if (!allAnswered) {
+        statusDiv.innerHTML = '<span class="error">Please answer all questions before submitting</span>';
+        return;
+    }
+    
+    let responses = {
+        "Sex": sex,
+        "Age": age,
+        "Area": area,
+        "Timestamp": new Date().toISOString()
+    };
+    
+    // Collect answers
+    for(let i = 0; i < 24; i++) {
+        let val = document.querySelector('input[name="q' + i + '"]:checked');
+        responses["Q" + (i + 1)] = val ? val.value : "";
+    }
+    
+    try {
+        // Try to send to Google Sheets, but don't wait for it
+        fetch("https://script.google.com/macros/s/AKfycbwM0YQSglMyPu1Sg0LGllXhYr4FLGrvR3MnHQiw00IITNblyySg-QvgnzNK_4GbeP7Z/exec", {
+            method: "POST",
+            mode: "no-cors", // This helps with CORS issues
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(responses)
+        }).catch(err => console.log("Google Sheets submission error:", err));
+        
+        // Create and download PDF immediately
+        createAndDownloadPDF(responses);
+        
+        statusDiv.innerHTML = '<span class="success">PDF downloaded successfully!</span>';
+        document.getElementById("msg").innerHTML = "Thank you for your participation!";
+        
+    } catch (error) {
+        console.error("Error:", error);
+        // Still try to download PDF even if Google Sheets fails
+        createAndDownloadPDF(responses);
+        statusDiv.innerHTML = '<span class="success">PDF downloaded successfully! (Note: Data was not saved to cloud)</span>';
+    }
 }
-doc.save("Survey_Response.pdf");
-document.getElementById("msg").innerHTML="Submitted & PDF downloaded";
+
+function createAndDownloadPDF(responses) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let y = 20;
+    
+    // Title
+    doc.setFontSize(16);
+    doc.text("Mental Health Survey Response", 20, y);
+    y += 15;
+    
+    // Participant Info
+    doc.setFontSize(12);
+    doc.text(`Sex: ${responses.Sex}`, 20, y);
+    y += 8;
+    doc.text(`Age: ${responses.Age}`, 20, y);
+    y += 8;
+    doc.text(`Area: ${responses.Area}`, 20, y);
+    y += 8;
+    doc.text(`Timestamp: ${responses.Timestamp}`, 20, y);
+    y += 15;
+    
+    // Responses
+    doc.setFontSize(10);
+    for(let i = 1; i <= 24; i++) {
+        let response = responses["Q" + i] || "Not answered";
+        doc.text(`Question ${i}: ${response}`, 20, y);
+        y += 6;
+        
+        if(y > 280) {
+            doc.addPage();
+            y = 20;
+        }
+    }
+    
+    doc.save("Mental_Health_Survey_Response.pdf");
+}
+
+// Optional: Add function to check if all questions are answered
+function checkAllAnswered() {
+    for(let i = 0; i < 24; i++) {
+        let val = document.querySelector('input[name="q' + i + '"]:checked');
+        if (!val) return false;
+    }
+    return true;
 }
 </script>
 </body>
