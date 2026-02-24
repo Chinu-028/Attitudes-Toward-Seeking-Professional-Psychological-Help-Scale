@@ -2,48 +2,140 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>IASMHS Survey - Ravenshaw University</title>
+<title>ATSPPH-SF Survey - Ravenshaw University</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 body{font-family:Arial;background:#eef2f5;padding:40px;}
 .container{background:white;padding:25px;max-width:800px;margin:auto;border-radius:10px;}
-.question{margin-top:18px;}
-.scale label{margin-right:10px;}
-button{margin-top:30px;padding:12px 20px;background:#2e7d32;color:white;border:none;border-radius:6px;cursor:pointer;}
+button{margin-top:30px;padding:15px 25px;background:#2e7d32;color:white;border:none;border-radius:8px;cursor:pointer;font-size:18px;font-weight:bold;width:100%;transition:background 0.2s;}
 button:hover{background:#1e5622;}
 button:disabled{background:#cccccc;cursor:not-allowed;}
-.error{color:red;margin-top:10px;font-size:14px;}
-.success{color:green;margin-top:10px;font-size:14px;}
-.consent-box{border:1px solid #ccc;padding:20px;margin-bottom:20px;background:#f9f9f9;border-radius:5px;}
+.error{color:red;margin-top:10px;font-size:14px;font-weight:bold;}
+.success{color:green;margin-top:10px;font-size:14px;font-weight:bold;}
+.consent-box{border:1px solid #2e7d32;padding:25px;margin-bottom:30px;background:#f9f9f9;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.1);}
 .consent-box h3{margin-top:0;color:#2e7d32;}
-.consent-check{margin:15px 0;font-weight:bold;}
-.demographics{background:#f5f5f5;padding:20px;border-radius:5px;margin-bottom:20px;}
+.consent-check{margin:20px 0;font-weight:bold;}
+.demographics{background:#f5f5f5;padding:25px;border-radius:10px;margin-bottom:30px;border:1px solid #2e7d32;}
 .demographics h3{color:#2e7d32;margin-top:0;}
-.demographics select,.demographics input{padding:8px;width:100%;max-width:300px;margin-bottom:15px;border:1px solid #ccc;border-radius:4px;}
-.demographics label{font-weight:bold;display:block;margin-bottom:5px;}
+.demographics select,.demographics input{padding:10px;width:100%;max-width:300px;margin-bottom:15px;border:2px solid #ccc;border-radius:6px;font-size:14px;}
+.demographics select:focus,.demographics input:focus{border-color:#2e7d32;outline:none;}
+.demographics label{font-weight:bold;display:block;margin-bottom:5px;color:#333;}
 .hidden{display:none;}
+.footer-note{margin-top:40px;font-size:12px;color:#666;text-align:center;border-top:2px solid #2e7d32;padding-top:20px;}
+.scale-note{background:#e8f5e9;padding:15px;border-radius:8px;margin:20px 0;font-size:15px;border-left:5px solid #2e7d32;}
+.loading{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;justify-content:center;align-items:center;color:white;font-size:28px;font-weight:bold;flex-direction:column;}
+.loading p{background:#2e7d32;padding:20px 40px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.3);}
+
+/* Question box styling with hover effect */
+.question{
+    margin-top:20px;
+    margin-bottom:20px;
+    padding:15px;
+    border:2px solid #2e7d32;
+    border-radius:10px;
+    background:#f9f9f9;
+    box-shadow:0 2px 4px rgba(0,0,0,0.1);
+    transition:all 0.3s ease;
+}
+
+/* Hover effect on entire question box */
+.question:hover{
+    background:#e8f5e9;
+    border-color:#1e5622;
+    box-shadow:0 8px 16px rgba(46,125,50,0.3);
+    transform:translateY(-2px);
+}
+
+.question p{
+    font-weight:bold;
+    margin-top:0;
+    margin-bottom:15px;
+    color:#1d4e1f;
+    font-size:15px;
+}
+
+/* Scale container */
+.scale{
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:5px 2px;
+}
+
+/* Smaller response option boxes */
+.scale label{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:6px 8px;
+    border:1px solid #2e7d32;
+    border-radius:5px;
+    background:white;
+    cursor:pointer;
+    transition:all 0.2s;
+    min-width:50px;
+    text-align:center;
+    font-size:13px;
+}
+
+.scale label:hover{
+    background:#c8e6c9;
+    transform:translateY(-2px);
+    box-shadow:0 2px 4px rgba(46,125,50,0.3);
+    border-color:#1e5622;
+}
+
+.scale input[type="radio"]{
+    margin-bottom:3px;
+    transform:scale(1);
+    cursor:pointer;
+}
+
+.scale span{
+    font-size:10px;
+    color:#555;
+    margin-top:2px;
+    font-weight:normal;
+}
+
+/* Selected radio button styling */
+.scale input[type="radio"]:checked + span{
+    color:#2e7d32;
+    font-weight:bold;
+}
+
+.scale label:has(input[type="radio"]:checked){
+    background:#e8f5e9;
+    border-width:2px;
+    border-color:#1e5622;
+}
 </style>
 </head>
 <body>
+<div class="loading" id="loading">
+    <p>Processing... Please wait</p>
+</div>
+
 <div class="container">
-<h2>Attitudes Toward Seeking Mental Health Services</h2>
+<h2>Attitudes Toward Seeking Professional Psychological Help</h2>
 <h3>Ravenshaw University Research Study</h3>
 
 <!-- Informed Consent Section -->
 <div class="consent-box" id="consentSection">
     <h3>INFORMED CONSENT FORM</h3>
-    <p><strong>Title of Study:</strong> Attitudes Towards Psychological Counselling Among Ravenshaw University Students</p>
-    <p><strong>Researcher:</strong> Dissertation Student, Department of Psychology, Ravenshaw University</p>
+    <p><strong>Title of Study:</strong> Attitudes Towards Seeking Professional Psychological Help Among Ravenshaw University Students</p>
+    <p><strong>Researcher:</strong> Post Graduate Student, Department of Psychology, Ravenshaw University</p>
     
-    <p><strong>Invitation:</strong> You are invited to participate in a dissertation study on attitudes towards psychological counselling among Ravenshaw University students.</p>
+    <p><strong>Invitation:</strong> You are invited to participate in a dissertation study on attitudes towards seeking professional psychological help among Ravenshaw University students.</p>
     
-    <p><strong>Procedure:</strong> Participation involves a brief 5-10 minute questionnaire about your views on mental health and counselling services.</p>
+    <p><strong>Procedure:</strong> Participation involves a brief 5-10 minute questionnaire about your views on mental health and professional help-seeking.</p>
     
     <p><strong>Risks and Benefits:</strong> No physical or psychological risks are anticipated. While there are no direct benefits to you, your participation will contribute to understanding mental health attitudes among university students.</p>
     
     <p><strong>Voluntary Participation:</strong> Your participation is completely voluntary. You may withdraw at any time without any penalty or consequence.</p>
     
-    <p><strong>Anonymity:</strong> All responses are completely anonymous—no identifying information (name, student ID, etc.) will be collected. Data will be used solely for academic purposes and reported only in aggregate.</p>
+    <p><strong>Anonymity:</strong> All responses are completely anonymous—no identifying information (name, student ID, etc.) will be collected. A random participant ID will be generated for tracking purposes only.</p>
     
     <p><strong>Eligibility:</strong> To participate, you must be a Ravenshaw University student aged 18 to 25 years.</p>
     
@@ -77,18 +169,18 @@ button:disabled{background:#cccccc;cursor:not-allowed;}
     <label for="age">Age:</label>
     <input type="number" id="age" required min="18" max="25" placeholder="18-25">
     
-    <label for="education">Education Level:</label>
-    <select id="education" required>
-        <option value="">Select</option>
-        <option>UG (Undergraduate)</option>
-        <option>PG (Postgraduate)</option>
-    </select>
-    
     <label for="area">Area of Residence:</label>
     <select id="area" required>
         <option value="">Select</option>
         <option>Urban</option>
         <option>Rural</option>
+    </select>
+    
+    <label for="education">Education Level:</label>
+    <select id="education" required>
+        <option value="">Select</option>
+        <option>UG (Undergraduate)</option>
+        <option>PG (Postgraduate)</option>
     </select>
     
     <label for="domicile">Domicile (Home State):</label>
@@ -114,46 +206,89 @@ button:disabled{background:#cccccc;cursor:not-allowed;}
     
     <hr>
     <p><b>Consent Confirmed:</b> Thank you for agreeing to participate. Please answer honestly.</p>
-    <p><b>Scale:</b> 0=Disagree | 1=Somewhat Disagree | 2=Undecided | 3=Somewhat Agree | 4=Agree</p>
+    
+    <!-- Scale Information -->
+    <div class="scale-note">
+        <p><b>Scale:</b> 0=Disagree | 1=Partly Disagree | 2=Partly Agree | 3=Agree</p>
+        <p><b>Please answer all items based on your own views.</b></p>
+    </div>
 </div>
 
 <!-- Survey Questions Section (Initially Hidden) -->
 <div id="surveySection" class="hidden">
     <div id="questions"></div>
-    <button onclick="submitForm()">Submit & Download PDF</button>
+    <button onclick="submitForm()" id="submitBtn">SUBMIT & DOWNLOAD PDF</button>
 </div>
 
 <p id="msg"></p>
 <div id="status"></div>
+
+<!-- Copyright and References Footer -->
+<div class="footer-note">
+    <p><strong>© 2025 Ravenshaw University, Department of Psychology. All rights reserved.</strong></p>
+    <p><strong>Reference:</strong> Fischer, E. H., & Farina, A. (1995). Attitudes toward seeking professional psychological help: A shortened form. Journal of College Student Development, 36, 368-373.</p>
+    <p>This inventory is used for academic research purposes only. The scale is free to use without restriction with proper citation.</p>
+</div>
 </div>
 
 <script>
+// ATSPPH-SF Items (10 items)
 const items = [
-"There are certain problems which should not be discussed outside of one's immediate family.",
-"I would have a very good idea of what to do and who to talk to if I decided to seek professional help for psychological problems.",
-"I would not want my significant other (spouse, partner, etc.) to know if I were suffering from psychological problems.",
-"Keeping one's mind on a job is a good solution for avoiding personal worries and concerns.",
-"If good friends asked my advice about a psychological problem, I might recommend that they see a professional.",
-"Having been mentally ill carries with it a burden of shame.",
-"It is probably best not to know everything about oneself.",
-"If I were experiencing a serious psychological problem at this point in my life, I would be confident that I could find relief in psychotherapy.",
-"People should work out their own problems; getting professional help should be a last resort.",
-"If I were to experience psychological problems, I could get professional help if I wanted to.",
-"Important people in my life would think less of me if they were to find out that I was experiencing psychological problems.",
-"Psychological problems, like many things, tend to work out by themselves.",
-"It would be relatively easy for me to find the time to see a professional for psychological problems.",
-"There are experiences in my life I would not discuss with anyone",
-"I would want to get professional help if I were worried or upset for a long period of time.",
-"I would be uncomfortable seeking professional help for psychological problems because people in my social or business circles might find out about it.",
-"Having been diagnosed with a mental disorder is a blot on a person's life.",
-"There is something admirable in the attitude of people who are willing to cope with their conflicts and fears without resorting to professional help.",
-"If I believed I were having a mental breakdown, my first inclination would be to get professional attention.",
-"I would feel uneasy going to a professional because of what some people would think.",
-"People with strong characters can get over psychological problems by themselves and would have little need for professional help.",
-"I would willingly confide intimate matters to an appropriate person if I thought it might help me or a member of my family.",
-"Had I received treatment for psychological problems, I would not feel that it ought to be covered up.",
-"I would be embarrassed if my neighbor saw me going into the office of a professional who deals with psychological problems."
+"If I believed I was having a mental breakdown, my first inclination would be to get professional attention.",
+"The idea of talking about problems with a psychologist strikes me as a poor way to get rid of emotional conflicts.",
+"If I were experiencing a serious emotional crisis at this point in my life, I would be confident that I could find relief in psychotherapy.",
+"There is something admirable in the attitude of a person who is willing to cope with his or her conflicts and fears without resorting to professional help.",
+"I would want to get psychological help if I were worried or upset for a long period of time.",
+"I might want to have psychological counseling in the future.",
+"A person with an emotional problem is not likely to solve it alone; he or she is likely to solve it with professional help.",
+"Considering the time and expense involved in psychotherapy, it would have doubtful value for a person like me.",
+"A person should work out his or her own problems; getting psychological counseling would be a last resort.",
+"Personal and emotional troubles, like many things, tend to work out by themselves."
 ];
+
+// Items that need reverse scoring (2, 4, 8, 9, 10) - using 0-based index
+const reverseScoredItems = [1, 3, 7, 8, 9]; // Indices 1,3,7,8,9 correspond to items 2,4,8,9,10
+
+// Map numeric values to string labels
+const responseLabels = {
+    0: "Disagree",
+    1: "Partly Disagree",
+    2: "Partly Agree",
+    3: "Agree"
+};
+
+// Generate random anonymous Participant ID
+function generateParticipantID() {
+    const letters = 'RU';
+    const numbers = Math.floor(1000 + Math.random() * 9000);
+    return `${letters}${numbers}`;
+}
+
+// Function to get interpretation text based on total score
+function getInterpretationText(score) {
+    if (score >= 0 && score <= 10) {
+        return "Strongly negative attitudes toward seeking professional help; likely to avoid services.";
+    } else if (score >= 11 && score <= 20) {
+        return "Moderate attitudes; may seek help selectively or under pressure.";
+    } else if (score >= 21 && score <= 30) {
+        return "Highly positive attitudes; inclined to seek professional help readily when needed.";
+    } else {
+        return "Unable to interpret";
+    }
+}
+
+// Function to get attitude level based on total score
+function getAttitudeLevel(score) {
+    if (score >= 0 && score <= 10) {
+        return "STRONGLY NEGATIVE";
+    } else if (score >= 11 && score <= 20) {
+        return "MODERATE";
+    } else if (score >= 21 && score <= 30) {
+        return "HIGHLY POSITIVE";
+    } else {
+        return "UNKNOWN";
+    }
+}
 
 // Function to toggle demographics and survey sections based on consent
 function toggleDemographics() {
@@ -170,13 +305,13 @@ function toggleDemographics() {
     }
 }
 
-// Generate questions
+// Generate questions with 0-3 scale and box styling
 function generateQuestions() {
     let html = "";
     items.forEach((q, i) => {
         html += `<div class="question"><p>${i+1}. ${q}</p><div class="scale">`;
-        for(let j = 0; j <= 4; j++) {
-            html += `<label><input type="radio" name="q${i}" value="${j}" required> ${j}</label>`;
+        for(let j = 0; j <= 3; j++) {
+            html += `<label><input type="radio" name="q${i}" value="${j}" required> ${j}<span>${responseLabels[j]}</span></label>`;
         }
         html += `</div></div>`;
     });
@@ -186,41 +321,62 @@ function generateQuestions() {
 // Call generateQuestions when page loads
 generateQuestions();
 
+// Function to reverse score a value (0->3, 1->2, 2->1, 3->0)
+function reverseScore(value) {
+    return 3 - parseInt(value);
+}
+
+// Function to get string label for response value
+function getResponseLabel(value) {
+    return responseLabels[value] || "Unknown";
+}
+
 async function submitForm() {
-    const statusDiv = document.getElementById("status");
-    statusDiv.innerHTML = "Processing...";
+    // Show loading overlay
+    document.getElementById("loading").style.display = "flex";
+    
+    // Disable submit button to prevent double submission
+    document.getElementById("submitBtn").disabled = true;
+    
+    // Generate anonymous participant ID
+    const participantID = generateParticipantID();
     
     // Check consent
     const consentCheck = document.getElementById("consentCheck");
     if (!consentCheck.checked) {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("submitBtn").disabled = false;
         document.getElementById("consentError").classList.remove("hidden");
-        statusDiv.innerHTML = '<span class="error">You must provide consent to participate.</span>';
         return;
     }
     
     // Validate demographics
     const sex = document.getElementById("sex").value;
     const age = document.getElementById("age").value;
-    const education = document.getElementById("education").value;
     const area = document.getElementById("area").value;
+    const education = document.getElementById("education").value;
     const domicile = document.getElementById("domicile").value;
     const stream = document.getElementById("stream").value;
     const department = document.getElementById("department").value;
     
-    if (!sex || !age || !education || !area || !domicile || !stream || !department) {
-        statusDiv.innerHTML = '<span class="error">Please fill in all demographic fields</span>';
+    if (!sex || !age || !area || !education || !domicile || !stream || !department) {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("submitBtn").disabled = false;
+        document.getElementById("status").innerHTML = '<span class="error">Please fill in all demographic fields</span>';
         return;
     }
     
     // Validate age range
     if (age < 18 || age > 25) {
-        statusDiv.innerHTML = '<span class="error">Age must be between 18 and 25 years</span>';
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("submitBtn").disabled = false;
+        document.getElementById("status").innerHTML = '<span class="error">Age must be between 18 and 25 years</span>';
         return;
     }
     
     // Validate all questions are answered
     let allAnswered = true;
-    for(let i = 0; i < 24; i++) {
+    for(let i = 0; i < 10; i++) {
         let val = document.querySelector('input[name="q' + i + '"]:checked');
         if (!val) {
             allAnswered = false;
@@ -229,113 +385,279 @@ async function submitForm() {
     }
     
     if (!allAnswered) {
-        statusDiv.innerHTML = '<span class="error">Please answer all questions before submitting</span>';
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("submitBtn").disabled = false;
+        document.getElementById("status").innerHTML = '<span class="error">Please answer all questions before submitting</span>';
         return;
     }
     
-    let responses = {
-        "Consent": "Yes",
-        "Sex": sex,
-        "Age": age,
-        "Education": education,
-        "Area": area,
-        "Domicile": domicile,
-        "Stream": stream,
-        "Department": department,
-        "Timestamp": new Date().toISOString()
-    };
-    
-    // Collect answers
-    for(let i = 0; i < 24; i++) {
+    // Collect raw scores
+    let rawScores = [];
+    for(let i = 0; i < 10; i++) {
         let val = document.querySelector('input[name="q' + i + '"]:checked');
-        responses["Q" + (i + 1)] = val ? val.value : "";
+        rawScores.push(parseInt(val.value));
     }
     
-    try {
-        // Try to send to Google Sheets
-        fetch("https://script.google.com/macros/s/AKfycbwM0YQSglMyPu1Sg0LGllXhYr4FLGrvR3MnHQiw00IITNblyySg-QvgnzNK_4GbeP7Z/exec", {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(responses)
-        }).catch(err => console.log("Google Sheets submission error:", err));
-        
-        // Create and download PDF immediately
-        createAndDownloadPDF(responses);
-        
-        statusDiv.innerHTML = '<span class="success">PDF downloaded successfully! Thank you for your participation.</span>';
-        document.getElementById("msg").innerHTML = "Your responses have been recorded.";
-        
-    } catch (error) {
-        console.error("Error:", error);
-        createAndDownloadPDF(responses);
-        statusDiv.innerHTML = '<span class="success">PDF downloaded successfully! (Note: Cloud save unavailable)</span>';
-    }
-}
-
-function createAndDownloadPDF(responses) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    let y = 20;
+    // Calculate scores for PDF (fast calculation)
+    let finalScores = [];
+    let totalScore = 0;
     
-    // Title
-    doc.setFontSize(16);
-    doc.text("Mental Health Survey Response - Ravenshaw University", 20, y);
-    y += 15;
-    
-    // Consent and Demographics
-    doc.setFontSize(12);
-    doc.text("CONSENT AND DEMOGRAPHICS:", 20, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.text(`Consent Provided: ${responses.Consent}`, 25, y);
-    y += 6;
-    doc.text(`Sex: ${responses.Sex}`, 25, y);
-    y += 6;
-    doc.text(`Age: ${responses.Age}`, 25, y);
-    y += 6;
-    doc.text(`Education: ${responses.Education}`, 25, y);
-    y += 6;
-    doc.text(`Area of Residence: ${responses.Area}`, 25, y);
-    y += 6;
-    doc.text(`Domicile: ${responses.Domicile}`, 25, y);
-    y += 6;
-    doc.text(`Stream: ${responses.Stream}`, 25, y);
-    y += 6;
-    doc.text(`Department: ${responses.Department}`, 25, y);
-    y += 6;
-    doc.text(`Timestamp: ${responses.Timestamp}`, 25, y);
-    y += 15;
-    
-    // Survey Responses
-    doc.setFontSize(12);
-    doc.text("SURVEY RESPONSES:", 20, y);
-    y += 8;
-    doc.setFontSize(10);
-    
-    for(let i = 1; i <= 24; i++) {
-        let response = responses["Q" + i] || "Not answered";
-        doc.text(`Q${i}: ${response}`, 25, y);
-        y += 6;
-        
-        if(y > 280) {
-            doc.addPage();
-            y = 20;
+    for(let i = 0; i < 10; i++) {
+        if (reverseScoredItems.includes(i)) {
+            let reversedValue = reverseScore(rawScores[i]);
+            finalScores.push(reversedValue);
+            totalScore += reversedValue;
+        } else {
+            finalScores.push(rawScores[i]);
+            totalScore += rawScores[i];
         }
     }
     
-    // Add footer
-    doc.setFontSize(8);
-    doc.text("Confidential - For Academic Research Only", 20, 290);
+    const meanScore = (totalScore / 10).toFixed(2);
     
-    doc.save("Ravenshaw_Mental_Health_Survey.pdf");
+    // Get attitude level and interpretation text based on new scoring
+    const attitudeLevel = getAttitudeLevel(totalScore);
+    const interpretationText = getInterpretationText(totalScore);
+    
+    // ===== SPREADSHEET DATA WITH INTERPRETATION RESULTS =====
+    // Now includes total score, attitude level, and interpretation text
+    let spreadsheetData = {
+        "ParticipantID": participantID,
+        "Consent": "Yes",
+        "Sex": sex,
+        "Age": age,
+        "Area": area,
+        "Education": education,
+        "Domicile": domicile,
+        "Stream": stream,
+        "Department": department,
+        "Q1": rawScores[0],
+        "Q2": rawScores[1],
+        "Q3": rawScores[2],
+        "Q4": rawScores[3],
+        "Q5": rawScores[4],
+        "Q6": rawScores[5],
+        "Q7": rawScores[6],
+        "Q8": rawScores[7],
+        "Q9": rawScores[8],
+        "Q10": rawScores[9],
+        "Total_Score": totalScore,                 // ADDED: Total score (0-30)
+        "Attitude_Level": attitudeLevel,            // ADDED: STRONGLY NEGATIVE / MODERATE / HIGHLY POSITIVE
+        "Interpretation": interpretationText,       // ADDED: Full interpretation text
+        "Timestamp": new Date().toISOString()
+    };
+    
+    // Send to Google Sheets (fire and forget - no await, no .catch to make it faster)
+    fetch("https://script.google.com/macros/s/AKfycbwM0YQSglMyPu1Sg0LGllXhYr4FLGrvR3MnHQiw00IITNblyySg-QvgnzNK_4GbeP7Z/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(spreadsheetData)
+    });
+    
+    // Create PDF immediately (synchronous operation) with string labels
+    createPDF(participantID, sex, age, area, education, domicile, stream, department, rawScores, totalScore, meanScore, attitudeLevel, interpretationText);
+    
+    // Hide loading and show success message
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("status").innerHTML = '<span class="success">✓ PDF downloaded successfully! Thank you for your participation.</span>';
+    
+    // Disable all inputs to prevent changes after submission
+    document.querySelectorAll('input[type="radio"], select, input[type="number"]').forEach(el => {
+        el.disabled = true;
+    });
+    
+    // Change button text
+    document.getElementById("submitBtn").innerHTML = "COMPLETED - Thank You";
+    document.getElementById("submitBtn").style.background = "#cccccc";
+    document.getElementById("submitBtn").style.cursor = "default";
 }
 
-// Add event listener to demographics to show survey when all fields are filled
+function createPDF(participantID, sex, age, area, education, domicile, stream, department, rawScores, totalScore, meanScore, attitudeLevel, interpretationText) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+    
+    // Set certificate style
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let y = 15;
+    
+    // Decorative border
+    doc.setDrawColor(46, 125, 50);
+    doc.setLineWidth(1);
+    doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+    
+    // Inner border
+    doc.setLineWidth(0.5);
+    doc.rect(15, 15, pageWidth - 30, pageHeight - 30);
+    
+    // Top margin line
+    doc.setDrawColor(46, 125, 50);
+    doc.setLineWidth(0.5);
+    doc.line(20, 25, pageWidth - 20, 25);
+    
+    // Ravenshaw University Name just below margin line
+    doc.setFontSize(20);
+    doc.setTextColor(46, 125, 50);
+    doc.text("RAVENSHAW UNIVERSITY", pageWidth/2, 32, { align: 'center' });
+    y = 40;
+    
+    // Department
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Department of Psychology", pageWidth/2, y, { align: 'center' });
+    y += 5;
+    doc.setFontSize(9);
+    doc.text("Cuttack, Odisha - 753003", pageWidth/2, y, { align: 'center' });
+    y += 12;
+    
+    // Title
+    doc.setFontSize(14);
+    doc.setTextColor(46, 125, 50);
+    doc.text("Attitudes Toward Seeking Professional Psychological Help", pageWidth/2, y, { align: 'center' });
+    y += 5;
+    doc.text("Scale - Short Form (ATSPPH-SF)", pageWidth/2, y, { align: 'center' });
+    y += 8;
+    
+    // Anonymous Participant ID
+    doc.setFontSize(11);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Participant ID: ${participantID} (Anonymous)`, pageWidth/2, y, { align: 'center' });
+    y += 10;
+    
+    // Demographics in one line
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Sex: ${sex}  |  Age: ${age}  |  Education: ${education}  |  Area: ${area}`, 20, y);
+    y += 5;
+    doc.text(`Domicile: ${domicile}  |  Stream: ${stream}  |  Dept: ${department}`, 20, y);
+    y += 5;
+    
+    // Timestamp
+    const date = new Date();
+    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    doc.text(`Timestamp: ${formattedDate}`, 20, y);
+    y += 12;
+    
+    // Results Box
+    doc.setFillColor(245, 245, 245);
+    doc.rect(20, y-5, pageWidth-40, 25, 'F');
+    doc.setFontSize(11);
+    doc.setTextColor(46, 125, 50);
+    doc.text("ATSPPH-SF RESULTS:", 25, y);
+    y += 5;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.text(`Total Score: ${totalScore} / 30  |  Mean Score: ${meanScore} / 3.0`, 25, y);
+    y += 5;
+    doc.text(`Attitude: ${attitudeLevel}`, 25, y);
+    y += 5;
+    doc.setFontSize(8);
+    doc.text("(Higher scores = more favorable attitudes toward seeking professional help)", 25, y);
+    y += 12;
+    
+    // Interpretation Box - MOVED BEFORE INDIVIDUAL RESPONSES
+    doc.setFillColor(245, 245, 245);
+    doc.rect(20, y-5, pageWidth-40, 20, 'F');
+    doc.setFontSize(10);
+    doc.setTextColor(46, 125, 50);
+    doc.text("INTERPRETATION:", 25, y);
+    y += 5;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    
+    // Split long interpretation text into multiple lines if needed
+    const splitInterpretation = doc.splitTextToSize(interpretationText, pageWidth - 60);
+    doc.text(splitInterpretation, 25, y);
+    y += (splitInterpretation.length * 4) + 8;
+    
+    // Individual Responses with STRING LABELS
+    doc.setFontSize(11);
+    doc.setTextColor(46, 125, 50);
+    doc.text("INDIVIDUAL RESPONSES:", 20, y);
+    y += 6;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(8);
+    doc.text("Scale: 0=Disagree | 1=Partly Disagree | 2=Partly Agree | 3=Agree", 20, y);
+    y += 5;
+    
+    // Two-column layout with boxed appearance
+    const leftCol = 25;
+    const rightCol = 120;
+    let col1Y = y;
+    let col2Y = y;
+    
+    const itemTexts = [
+        "Mental breakdown - get professional attention",
+        "Talking to psychologist is poor way",
+        "Serious crisis - confident in psychotherapy",
+        "Admirable to cope without help",
+        "Want help if worried/upset long time",
+        "Might want counseling in future",
+        "Emotional problem not solved alone",
+        "Psychotherapy doubtful value",
+        "Work out own problems - last resort",
+        "Emotional troubles work out alone"
+    ];
+    
+    for(let i = 0; i < 10; i++) {
+        const itemNum = i + 1;
+        const rawValue = rawScores[i];
+        const stringLabel = getResponseLabel(rawValue);
+        const isReversed = reverseScoredItems.includes(i);
+        const reverseIndicator = isReversed ? " (R)" : "";
+        
+        if (i < 5) {
+            doc.text(`Q${itemNum}: ${stringLabel}${reverseIndicator} - ${itemTexts[i]}`, leftCol, col1Y);
+            col1Y += 5;
+        } else {
+            doc.text(`Q${itemNum}: ${stringLabel}${reverseIndicator} - ${itemTexts[i]}`, rightCol, col2Y);
+            col2Y += 5;
+        }
+    }
+    
+    y = Math.max(col1Y, col2Y) + 8;
+    
+    // Reverse scoring note
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Note: Items marked (R) were reverse-scored (2,4,8,9,10): 0=3, 1=2, 2=1, 3=0", 20, y);
+    y += 6;
+    
+    // Reference table at bottom
+    doc.setFontSize(8);
+    doc.setTextColor(46, 125, 50);
+    doc.text("INTERPRETATION GUIDE:", 20, y);
+    y += 4;
+    doc.setTextColor(100, 100, 100);
+    doc.text("0-10: Strongly negative attitudes | 11-20: Moderate attitudes | 21-30: Highly positive attitudes", 20, y);
+    y += 6;
+    
+    // Footer with EXACT references as requested
+    y = pageHeight - 30;
+    doc.setDrawColor(46, 125, 50);
+    doc.line(20, y-5, pageWidth-20, y-5);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text("© 2025 Ravenshaw University, Department of Psychology. All rights reserved.", pageWidth/2, y, { align: 'center' });
+    y += 5;
+    doc.text("Reference: Fischer, E. H., & Farina, A. (1995). Attitudes toward seeking professional psychological help: A shortened form.", pageWidth/2, y, { align: 'center' });
+    y += 4;
+    doc.text("Journal of College Student Development, 36, 368-373.", pageWidth/2, y, { align: 'center' });
+    
+    // Save PDF
+    doc.save(`ATSPPH_${participantID}_Certificate.pdf`);
+}
+
+// Function to show survey after demographics are filled
 document.getElementById('sex').addEventListener('change', checkDemographics);
 document.getElementById('age').addEventListener('change', checkDemographics);
-document.getElementById('education').addEventListener('change', checkDemographics);
 document.getElementById('area').addEventListener('change', checkDemographics);
+document.getElementById('education').addEventListener('change', checkDemographics);
 document.getElementById('domicile').addEventListener('change', checkDemographics);
 document.getElementById('stream').addEventListener('change', checkDemographics);
 document.getElementById('department').addEventListener('input', checkDemographics);
@@ -346,13 +668,13 @@ function checkDemographics() {
     
     const sex = document.getElementById("sex").value;
     const age = document.getElementById("age").value;
-    const education = document.getElementById("education").value;
     const area = document.getElementById("area").value;
+    const education = document.getElementById("education").value;
     const domicile = document.getElementById("domicile").value;
     const stream = document.getElementById("stream").value;
     const department = document.getElementById("department").value;
     
-    if (sex && age && education && area && domicile && stream && department) {
+    if (sex && age && area && education && domicile && stream && department) {
         if (age >= 18 && age <= 25) {
             document.getElementById("surveySection").classList.remove("hidden");
         }
