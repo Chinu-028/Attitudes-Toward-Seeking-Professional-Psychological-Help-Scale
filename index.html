@@ -110,6 +110,18 @@ button:disabled{background:#cccccc;cursor:not-allowed;}
     border-width:2px;
     border-color:#1e5622;
 }
+
+/* Save status indicator */
+.save-status{
+    margin-top:15px;
+    padding:10px;
+    border-radius:5px;
+    font-size:14px;
+    text-align:center;
+}
+.save-status.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb;}
+.save-status.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;}
+.save-status.warning{background:#fff3cd;color:#856404;border:1px solid #ffeeba;}
 </style>
 </head>
 <body>
@@ -125,7 +137,7 @@ button:disabled{background:#cccccc;cursor:not-allowed;}
 <div class="consent-box" id="consentSection">
     <h3>INFORMED CONSENT FORM</h3>
     <p><strong>Title of Study:</strong> Attitudes Towards Seeking Professional Psychological Help Among Ravenshaw University Students</p>
-    <p><strong>Researcher:</strong> Post Graduate Student, Department of Psychology, Ravenshaw University</p>
+    <p><strong>Researcher:</strong> Post GraduateStudent, Department of Psychology, Ravenshaw University</p>
     
     <p><strong>Invitation:</strong> You are invited to participate in a dissertation study on attitudes towards seeking professional psychological help among Ravenshaw University students.</p>
     
@@ -220,6 +232,9 @@ button:disabled{background:#cccccc;cursor:not-allowed;}
     <button onclick="submitForm()" id="submitBtn">SUBMIT & DOWNLOAD PDF</button>
 </div>
 
+<!-- Save Status Indicator -->
+<div id="saveStatus" class="save-status hidden"></div>
+
 <p id="msg"></p>
 <div id="status"></div>
 
@@ -256,6 +271,25 @@ const responseLabels = {
     2: "Partly Agree",
     3: "Agree"
 };
+
+// Store submitted data in localStorage as backup
+function saveToLocalBackup(data) {
+    try {
+        const backups = JSON.parse(localStorage.getItem('survey_backups') || '[]');
+        backups.push({
+            timestamp: new Date().toISOString(),
+            participantId: data.ParticipantID,
+            data: data
+        });
+        // Keep only last 10 backups
+        if (backups.length > 10) backups.shift();
+        localStorage.setItem('survey_backups', JSON.stringify(backups));
+        return true;
+    } catch (e) {
+        console.error('Local backup failed:', e);
+        return false;
+    }
+}
 
 // Generate random anonymous Participant ID
 function generateParticipantID() {
@@ -337,6 +371,10 @@ async function submitForm() {
     
     // Disable submit button to prevent double submission
     document.getElementById("submitBtn").disabled = true;
+    
+    // Hide any previous save status
+    const saveStatus = document.getElementById("saveStatus");
+    saveStatus.classList.add("hidden");
     
     // Generate anonymous participant ID
     const participantID = generateParticipantID();
@@ -420,7 +458,6 @@ async function submitForm() {
     const interpretationText = getInterpretationText(totalScore);
     
     // ===== SPREADSHEET DATA WITH INTERPRETATION RESULTS =====
-    // Now includes total score, attitude level, and interpretation text
     let spreadsheetData = {
         "ParticipantID": participantID,
         "Consent": "Yes",
@@ -441,21 +478,46 @@ async function submitForm() {
         "Q8": rawScores[7],
         "Q9": rawScores[8],
         "Q10": rawScores[9],
-        "Total_Score": totalScore,                 // ADDED: Total score (0-30)
-        "Attitude_Level": attitudeLevel,            // ADDED: STRONGLY NEGATIVE / MODERATE / HIGHLY POSITIVE
-        "Interpretation": interpretationText,       // ADDED: Full interpretation text
+        "Total_Score": totalScore,
+        "Mean_Score": meanScore,
+        "Attitude_Level": attitudeLevel,
+        "Interpretation": interpretationText,
         "Timestamp": new Date().toISOString()
     };
     
-    // Send to Google Sheets (fire and forget - no await, no .catch to make it faster)
-    fetch("https://script.google.com/macros/s/AKfycbwM0YQSglMyPu1Sg0LGllXhYr4FLGrvR3MnHQiw00IITNblyySg-QvgnzNK_4GbeP7Z/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(spreadsheetData)
-    });
+    // Save to localStorage as backup
+    saveToLocalBackup(spreadsheetData);
     
-    // Create PDF immediately (synchronous operation) with string labels
+    try {
+        // ===== IMPROVED FETCH WITH PROPER ERROR HANDLING =====
+        // Remove 'no-cors' mode and add proper headers
+        const response = await fetch("https://script.google.com/macros/s/AKfycbwM0YQSglMyPu1Sg0LGllXhYr4FLGrvR3MnHQiw00IITNblyySg-QvgnzNK_4GbeP7Z/exec", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "text/plain;charset=utf-8", // Changed to text/plain to avoid CORS preflight
+            },
+            body: JSON.stringify(spreadsheetData)
+        });
+        
+        // Check if response is OK
+        if (response.ok) {
+            saveStatus.innerHTML = '✓ Data successfully saved to spreadsheet';
+            saveStatus.className = 'save-status success';
+        } else {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Spreadsheet save error:', error);
+        
+        // Show warning but continue with PDF download
+        saveStatus.innerHTML = '⚠ Data saved locally but could not reach server. Your responses are backed up in your browser.';
+        saveStatus.className = 'save-status warning';
+    }
+    
+    // Show save status
+    saveStatus.classList.remove("hidden");
+    
+    // Create PDF immediately
     createPDF(participantID, sex, age, area, education, domicile, stream, department, rawScores, totalScore, meanScore, attitudeLevel, interpretationText);
     
     // Hide loading and show success message
@@ -560,7 +622,7 @@ function createPDF(participantID, sex, age, area, education, domicile, stream, d
     doc.text("(Higher scores = more favorable attitudes toward seeking professional help)", 25, y);
     y += 12;
     
-    // Interpretation Box - MOVED BEFORE INDIVIDUAL RESPONSES
+    // Interpretation Box
     doc.setFillColor(245, 245, 245);
     doc.rect(20, y-5, pageWidth-40, 20, 'F');
     doc.setFontSize(10);
@@ -679,6 +741,11 @@ function checkDemographics() {
             document.getElementById("surveySection").classList.remove("hidden");
         }
     }
+}
+
+// Optional: Function to retrieve local backups
+function getLocalBackups() {
+    return JSON.parse(localStorage.getItem('survey_backups') || '[]');
 }
 </script>
 </body>
